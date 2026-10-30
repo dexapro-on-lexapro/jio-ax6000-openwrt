@@ -30,7 +30,9 @@ Production-grade OpenWrt builds and device integration patches for the **JioRout
 
 ---
 
-## 📦 Supported SKUs
+## 📦 Supported SKUs & Pre-compiled Binaries
+
+Pre-compiled production images and cryptographic checksums are available in the **[v2026.10.30 Release](https://github.com/dwaipayandex/jio-ax6000-openwrt/releases/tag/v2026.10.30)**.
 
 | Device SKU | Architecture | SoC / Platform | Radios | OpenWrt Target |
 | :--- | :--- | :--- | :--- | :--- |
