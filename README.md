@@ -1,12 +1,20 @@
-# JioRouter AX6000 (JIDU6J11 Series) OpenWrt Firmware
+# JioRouter AX6000 OpenWrt Firmware (Qualcomm & MediaTek)
 
-Production-grade OpenWrt builds and device integration patches for the **JioRouter AX6000 (JIDU6J11 Series: 6111, 6411, 6611, 6811, 6911)** powered by the **Qualcomm IPQ9554 / IPQ9574** SoC (`qualcommbe/ipq95xx`).
+Production-grade OpenWrt builds and device integration patches for the **JioRouter AX6000** family, supporting both **Qualcomm IPQ9554** (JIDU6J11 Series) and **MediaTek MT7986A Filogic 830** (JIDU6101 & JIDU6J01 Series).
 
 ---
 
 ## 🌟 Technical Overview & Enhancements
 
-* **Upstream Bleeding-Edge Master:** Built against OpenWrt upstream `main` (`ca454c00b6`), modern Linux kernel **6.18.55**, GCC **14.4.0**, and `musl libc`.
+* **Upstream Bleeding-Edge Master:** Built against OpenWrt upstream `main` (`ca454c00b6`), modern Linux kernels, GCC **14.4.0**, and `musl libc`.
+* **Plug-and-Play USB Tethering & Cellular Dongle Suite:**
+  * Full driver stack built directly into the kernel/rootfs: `kmod-usb-net-rndis`, `kmod-usb-net-cdc-ether`, `kmod-usb-net-cdc-ncm`, `kmod-usb-net-cdc-mbim`, `kmod-usb-net-qmi-wwan`, `kmod-usb-net-huawei-cdc-ncm`, `kmod-usb-net-ipheth` (Apple iPhone), `kmod-usb-net-asix`, `kmod-usb-net-asix-ax88179`, `kmod-usb-net-rtl8150`, `kmod-usb-net-rtl8152`, `kmod-usb-serial-option`, `usb-modeswitch`, `uqmi`, `umbim`.
+  * Hotplug automation (`/etc/hotplug.d/net/99-usb-tethering`): dynamically provisions mobile tethering as a failover/primary WAN interface upon connection.
+* **Dynamic LED Status Indicator:**
+  * Real-time network health daemon (`/usr/bin/led_internet_monitor.sh`):
+    * 🟢 **Solid Green**: Internet reachable (WAN gateway & DNS ping verified)
+    * 🔴 **Solid Red**: Internet unreachable / cable unplugged
+    * 🔴 **Red Blinking**: System bootup / initialization
 * **Integrated USB Storage Support (No Snapshot Vermagic Lockup):**
   * Solves the common community snapshot issue where upstream kernel vermagic hash shifts, blocking `kmod-*` installs from online package mirrors.
   * Essential storage components (`kmod-usb-storage`, `kmod-fs-ext4`, `kmod-fs-vfat`, `block-mount`) are built directly into the SquashFS rootfs (`=y`).
@@ -24,13 +32,15 @@ Production-grade OpenWrt builds and device integration patches for the **JioRout
 
 ## 📦 Supported SKUs
 
-| Device SKU | Architecture | Radios | OpenWrt Target |
-| :--- | :--- | :--- | :--- |
-| **JIDU6111** | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
-| **JIDU6411** | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
-| **JIDU6611** | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
-| **JIDU6811** | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
-| **JIDU6911** | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
+| Device SKU | Architecture | SoC / Platform | Radios | OpenWrt Target |
+| :--- | :--- | :--- | :--- | :--- |
+| **JIDU6111** | ARM64 (Cortex-A53) | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
+| **JIDU6411** | ARM64 (Cortex-A53) | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
+| **JIDU6611** | ARM64 (Cortex-A53) | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
+| **JIDU6811** | ARM64 (Cortex-A53) | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
+| **JIDU6911** | ARM64 (Cortex-A53) | Qualcomm IPQ9554 | 2.4G 802.11ax + 5G 802.11ax | `qualcommbe/ipq95xx` |
+| **JIDU6101** | ARM64 (Cortex-A53) | MediaTek MT7986A Filogic 830 | 2.4G 802.11ax + 5G 802.11ax | `mediatek/filogic` |
+| **JIDU6J01** *(6201, 6401, 6601, 6701, 6801)* | ARM64 (Cortex-A53) | MediaTek MT7986A Filogic 830 | 2.4G 802.11ax + 5G 802.11ax | `mediatek/filogic` |
 
 ---
 
@@ -38,7 +48,7 @@ Production-grade OpenWrt builds and device integration patches for the **JioRout
 
 In compliance with open-source engineering transparency and AI attribution standards:
 * **Assisted By:** Google Antigravity / Gemini Advanced Agentic Coding.
-* **Role:** Automated cross-compilation pipeline management, kernel 6.18 upstream Device Tree syntax compatibility refactoring, patch generation, and package bundle curation.
+* **Role:** Automated cross-compilation pipeline management, kernel upstream Device Tree syntax compatibility refactoring, patch generation, dynamic LED daemon design, and package bundle curation.
 * **Human Oversight:** Hardware verification, repository oversight, and direction by [@dwaipayandex](https://github.com/dwaipayandex).
 
 ---
