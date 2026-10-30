@@ -1,0 +1,8 @@
+*.ubi
+*.bin
+*.itb
+*.apk
+*.tar.gz
+*.iso
+.DS_Store
+*.tmp
