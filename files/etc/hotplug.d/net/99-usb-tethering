@@ -1,0 +1,22 @@
+#!/bin/sh
+
+case "$ACTION" in
+    add)
+        case "$INTERFACE" in
+            usb[0-9]*|eth[1-9]*)
+                # If wan_usb doesn't exist, create it
+                if ! uci get network.wan_usb >/dev/null 2>&1; then
+                    uci set network.wan_usb=interface
+                    uci set network.wan_usb.proto='dhcp'
+                    uci set network.wan_usb.device="$INTERFACE"
+                    uci set network.wan_usb.metric='20'
+                    uci add_list firewall.@zone[1].network='wan_usb'
+                    uci commit network
+                    uci commit firewall
+                    /etc/init.d/network reload
+                    /etc/init.d/firewall reload
+                fi
+                ;;
+        esac
+        ;;
+esac
