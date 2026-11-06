@@ -44,7 +44,9 @@ On OpenWrt snapshot builds, upstream live package feeds frequently change, causi
 
 ## 📦 Supported SKUs & Build Artifacts
 
-Pre-compiled production images and cryptographic checksums are available in the **[v2026.10.30 Release](https://github.com/dwaipayandex/jio-ax6000-openwrt/releases/tag/v2026.10.30)**.
+Pre-compiled production images and cryptographic checksums are available on GitHub Releases:
+* **[v2026.11.06 Release (Latest)](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.11.06)** — Full suite with Samba 4, MiniDLNA, Tailscale, AdGuardHome, SQM (CAKE), WireGuard, USB cellular tethering, and USB printing.
+* **[v2026.10.30 Release](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.10.30)** — Baseline production release.
 
 | Device SKU | Architecture | SoC / Platform | Radios | OpenWrt Target | Generated Artifacts |
 | :--- | :--- | :--- | :--- | :--- | :--- |
