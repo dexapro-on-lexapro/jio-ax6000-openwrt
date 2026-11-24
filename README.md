@@ -4,9 +4,9 @@ Production-grade OpenWrt builds and device integration patches for the **JioRout
 
 ---
 
-## 🌟 Technical Highlights & Included Components
+## Technical Highlights & Included Components
 
-This release is compiled against OpenWrt bleeding-edge `main` with **Linux Kernel 6.18.55**, modern **GCC 14.4.0**, and **musl libc**. Every component is built directly into the root filesystem (`=y`) to provide out-of-the-box functionality without external package repository dependencies.
+This release is compiled against OpenWrt bleeding-edge `main` with **Linux Kernel 6.18**, modern **GCC 14.4.0**, and **musl libc**. Every component is built directly into the root filesystem (`=y`) to provide out-of-the-box functionality without external package repository dependencies.
 
 ### 1. Plug-and-Play USB Tethering & Cellular Dongle Suite
 The firmware integrates the complete Linux USB networking and mobile broadband subsystem:
@@ -20,34 +20,40 @@ The firmware integrates the complete Linux USB networking and mobile broadband s
 An automated background health monitor (`/usr/bin/led_internet_monitor.sh` managed by `procd` via `/etc/init.d/led_internet_monitor`):
 * Automatically detects the platform architecture (Qualcomm IPQ9554 GPIO LEDs vs. MediaTek MT7986A Filogic GPIO LEDs).
 * Continuously checks default gateway reachability and verifies external DNS connectivity:
-  * 🟢 **Solid Green**: Active WAN connection and internet reachability verified.
-  * 🔴 **Solid Red**: WAN disconnected or external internet gateway unreachable.
-  * 🔴 **Red Blinking**: System initialization and bootup phase.
+  * **Solid Green**: Active WAN connection and internet reachability verified.
+  * **Solid Red**: WAN disconnected or external internet gateway unreachable.
+  * **Red Blinking**: System initialization and bootup phase.
 
 ### 3. Integrated USB Storage Subsystem (No Vermagic Lockup)
 On OpenWrt snapshot builds, upstream live package feeds frequently change, causing kernel vermagic hash mismatches that prevent installing out-of-tree `kmod-*` packages. To eliminate this issue:
-* `kmod-usb-storage`, `kmod-fs-ext4`, `kmod-fs-vfat`, and `block-mount` are pre-compiled into the firmware.
+* `kmod-usb-storage`, `kmod-fs-ext4`, `kmod-fs-vfat`, `kmod-fs-ntfs3`, `kmod-fs-exfat`, and `block-mount` are pre-compiled into the firmware.
+* Full Samba 4 file sharing (`samba4-server`, `samba4-libs`, `luci-app-samba4`) and MiniDLNA streaming (`minidlna`, `luci-app-minidlna`, `ffmpeg`, `libdrm`).
 * External storage devices format and mount automatically without requiring internet access or manual `opkg` installations.
 
-### 4. Memory Optimizations & Kernel Stability
-* **Qualcomm `ath11k` Mode-2 Memory Profile (`smallbuffers`):** Configured via Device Tree (`qcom,ath11k-fw-memory-mode = <2>`) for both radios (`wifi0` and `wifi1`). Capping maximum client associations to 128 and reclaiming post-boot calibration buffers (`coldboot_cal_mm = false`) saves **~15–30 MB of kernel RAM** and prevents Out-Of-Memory (OOM) conditions under heavy concurrent connections.
-* **`ath11k` RX Ring Buffer `kmalloc` Patch:** Backports independent `kmalloc`-backed socket buffer allocations for DMA RX rings, eliminating page fragmentation drain over long running uptimes.
-* **MediaTek Filogic Optimizations:** Fully utilizes hardware packet offloading (flow offloading) via MediaTek's `mt76` driver suite with 4x4 MU-MIMO and beamforming enabled.
+### 4. Memory Optimizations, Wi-Fi Stability & Bufferbloat Mitigation
+* **Qualcomm 2.4GHz WCSS Remoteproc Fix:** Explicit `&q6_region { status = "okay"; };` memory node assignment prevents remoteproc allocation failures (`error -22`), keeping the integrated IPQ9574 AHB 2.4GHz radio (`wifi0`) fully active.
+* **ath11k Wi-Fi Driver Optimization Suite:**
+  * Merged regulatory domain tables unlock full 30 dBm transmit power and 160 MHz channel width on Band 2 (channels 36-64).
+  * Shrunk RXDMA (2048) and monitor ring buffers (256) eliminate Out-Of-Memory kernel panics under sustained multi-gigabit workloads.
+  * Dedicated page-frag caches for RXDMA resolve page exhaustion leaks without legacy kmalloc penalties.
+  * Idempotent external IRQ control ensures clean Wi-Fi crash recovery and service restarts.
+* **Qualcomm `ath11k` Mode-2 Memory Profile (`smallbuffers`):** Configured via Device Tree (`qcom,ath11k-fw-memory-mode = <2>`) for both radios (`wifi0` and `wifi1`), saving ~15-30 MB of kernel RAM.
+* **Active Queue Management (SQM / Bufferbloat Elimination):** Pre-compiled `kmod-sched-cake` (CAKE qdisc), `kmod-ifb` (Intermediate Functional Block pseudo-device for ingress traffic shaping), `kmod-sched-core`, `sqm-scripts`, and `luci-app-sqm`.
+* **MediaTek Filogic Optimizations:** Fully utilizes hardware packet offloading (WED/WO flow offloading) via MediaTek's `mt76` driver suite with 4x4 MU-MIMO and beamforming enabled.
 
 ### 5. Pre-installed Management & Network Services
-* **Web Interface:** Modern LuCI web administration with HTTPS support (`luci-ssl`).
-* **Secure Networking:** WireGuard kernel support and web management (`kmod-wireguard`, `wireguard-tools`, `luci-app-wireguard`).
-* **Content Filtering & Metrics:** Integrated `adguardhome`, `luci-app-adguardhome`, and traffic accounting via `nlbwmon` / `luci-app-nlbwmon`.
-* **Diagnostic Utilities:** `htop`, `iperf3`, `tcpdump`, `ethtool`, and `curl`.
+* **Web Interface:** Modern LuCI web administration with HTTPS support (`luci-ssl`, `attendedsysupgrade`).
+* **Mesh VPN & Privacy:** Native Tailscale (`tailscale`, `tailscaled`, `luci-app-tailscale-community`), WireGuard (`kmod-wireguard`, `wireguard-tools`, `luci-app-wireguard`), and AdGuardHome (`adguardhome`, `luci-app-adguardhome`).
+* **Diagnostic & Monitoring Utilities:** `ttyd` web terminal, `btop`, `htop`, `iperf3`, `tcpdump`, `ethtool`, `nano`, `curl`, and `watchcat`.
 
 ---
 
-## 📦 Supported SKUs & Build Artifacts
+## Supported SKUs & Build Artifacts
 
 Pre-compiled production images and cryptographic checksums are available on GitHub Releases:
-* **[v2026.11.24 Release (Latest)](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.11.24)** — Qualcomm IPQ9554 2.4GHz WCSS PIL memory fix, ath11k 160MHz Band 2 & 30 dBm unlock, OOM buffer reduction, and 70MB UBI partition sizing.
-* **[v2026.11.06 Release](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.11.06)** — Full suite with Samba 4, MiniDLNA, Tailscale, AdGuardHome, SQM (CAKE), WireGuard, USB cellular tethering, and USB printing.
-* **[v2026.10.30 Release](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.10.30)** — Baseline production release.
+* **[v2026.11.24 Release (Latest)](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.11.24)** - Qualcomm IPQ9554 2.4GHz WCSS PIL memory fix, ath11k 160MHz Band 2 & 30 dBm unlock, OOM buffer reduction, and 70MB UBI partition sizing.
+* **[v2026.11.06 Release](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.11.06)** - Full suite with Samba 4, MiniDLNA, Tailscale, AdGuardHome, SQM (CAKE), WireGuard, USB cellular tethering, and USB printing.
+* **[v2026.10.30 Release](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.10.30)** - Baseline production release.
 
 | Device SKU | Architecture | SoC / Platform | Radios | OpenWrt Target | Generated Artifacts |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -61,7 +67,7 @@ Pre-compiled production images and cryptographic checksums are available on GitH
 
 ---
 
-## 📂 Repository Layout
+## Repository Layout
 
 ```
 ├── LICENSE                                    # GNU General Public License v2.0
@@ -79,7 +85,7 @@ Pre-compiled production images and cryptographic checksums are available on GitH
 
 ---
 
-## 🛠️ Building From Source
+## Building From Source
 
 To build this firmware from source using the official OpenWrt build system:
 
@@ -116,7 +122,7 @@ To build this firmware from source using the official OpenWrt build system:
 
 ---
 
-## 🤖 AI Assistance & Transparency Disclosure
+## AI Assistance & Transparency Disclosure
 
 In compliance with open-source engineering transparency and AI attribution standards:
 * **Tool:** Assisted by **Google Antigravity / Gemini Advanced Agentic Coding**.
@@ -125,18 +131,22 @@ In compliance with open-source engineering transparency and AI attribution stand
 
 ---
 
-## 🙏 Credits & Acknowledgments
+## Credits & Acknowledgments
 
 This project is built on the research, reverse engineering, and collaborative contributions of the open-source networking community:
-* **[OpenWrt Project](https://openwrt.org/)** — Foundation of the open embedded Linux distribution and toolchain.
-* **[@Sandiep](https://github.com/Sandiep)** (Sandeep Sondagar) — Initial hardware reverse engineering, bootloader analysis, device tree authorship, and smallbuffers memory research for the Qualcomm IPQ9554 (JIDU6J11) platform.
-* **[@themayankraut](https://github.com/themayankraut)** (Mayank Raut) — Hardware documentation, SKU cross-referencing, and community support for the Jio AX6000 hardware platform.
-* **Robert Marko** — Upstream development of the `ath11k` firmware memory mode subsystem in the Linux kernel.
-* **Michael Phan** — Upstream patch for `ath11k` RX ring buffer `kmalloc`-backed socket allocation to address long-term memory leaks.
+
+* **[OpenWrt Project](https://openwrt.org/)** - Foundation of the open embedded Linux distribution, packaging system, and toolchain.
+* **[@Sandiep](https://github.com/Sandiep) (Sandeep Sondagar)** - Initial hardware reverse engineering, bootloader analysis, device tree authorship, and smallbuffers memory research for the Qualcomm IPQ9554 (JIDU6J11) platform; co-author of the ath11k driver optimization series (idempotent IRQ handling, private page-frag DMA caches, regulatory domain merge, and RXDMA ring buffer reduction).
+* **[@adityabakare](https://github.com/adityabakare) (Aditya Bakare)** - Root-causing and fixing the 2.4GHz internal WCSS PIL reservation regression in Linux kernel 6.18 (`&q6_region { status = "okay"; };`), restoring the integrated IPQ9574 Hexagon DSP remoteproc binding.
+* **[@SahilB69](https://github.com/SahilB69) (Sahil Bakshi)** - Maintenance of community snapshot builds, authoring `openwrt/iwinfo#51` for IPQ9574 SoC detection, contributing first-boot Wi-Fi activation scripts, and co-curating the modern `ath11k` patch series.
+* **[@themayankraut](https://github.com/themayankraut) (Mayank Raut)** - Hardware documentation, board teardown research, SKU cross-referencing, and community support for the Jio AX6000 hardware ecosystem.
+* **[@AliLostInTheDark](https://github.com/AliLostInTheDark) (Ifran Ali), [@AKoo7](https://github.com/AKoo7) (AK Sharma), and [@sh3ikh-faisal](https://github.com/sh3ikh-faisal) (Sheikh Faisal)** - Collaborative device tree refactoring and multi-SKU platform support across the JioRouter hardware line (upstream OpenWrt PR #26551 and PR #26498).
+* **Robert Marko** - Upstream development and architecture of the `ath11k` firmware memory mode subsystem in the Linux kernel.
+* **Michael Phan** - Upstream foundation for `ath11k` socket allocation and DMA memory leak mitigations.
 
 ---
 
-## ⚖️ License & Disclaimer
+## License & Disclaimer
 
 * **License:** This project is licensed under the [GNU General Public License v2.0 (GPL-2.0)](LICENSE) to maintain full compatibility with the OpenWrt and Linux kernel projects.
 * **Disclaimer:** Custom firmware modifications carry inherent risks. This repository provides source patches, overlays, and build artifacts for development, educational, and testing purposes only. No warranties or guarantees of fitness for a particular purpose are expressed or implied.
