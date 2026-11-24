@@ -1,35 +1,28 @@
-## JioRouter AX6000 OpenWrt Production Release v2026.11.06
+## JioRouter AX6000 OpenWrt Production Release v2026.11.24
 
-Production-grade OpenWrt firmware builds for the JioRouter AX6000 family based on upstream OpenWrt master with Linux kernel 6.18.55 (supporting both Qualcomm IPQ9554 & MediaTek Filogic 830).
+Production-grade OpenWrt firmware builds for the JioRouter AX6000 family based on upstream OpenWrt master with Linux kernel 6.18 (supporting Qualcomm IPQ9554 JIDU6J11 series and MediaTek Filogic 830).
 
 ---
 
 ### 🌟 Release Highlights
 
-1. **Wi-Fi Default-On & 2.4GHz Radio Verification:**
-   - **Wi-Fi Enabled on First Boot:** Both MediaTek and Qualcomm images ship with Wi-Fi enabled by default across all radios (`disabled='0'` in `/lib/wifi/mac80211.uc` and staged UCI defaults sweep `/etc/uci-defaults/90-enable-wifi`).
-   - **Qualcomm 2.4GHz Radio Fully Operational:** The 2.4GHz internal radio issue from early development builds is **100% resolved**. Kernel configuration enables `CONFIG_QCOM_Q6V5_WCSS=y` (PIL remoteproc) and includes complete IPQ9574 `board-2.bin` calibration and Q6/M3 firmware symlinks in `/lib/firmware/ath11k/IPQ9574/hw1.0/`, enabling `kmod-ath11k-ahb` to boot the internal 2.4GHz WCSS radio without firmware crashes.
-   - **MediaTek Filogic 830:** MT7986A dual-band (2.4GHz + 5GHz) with hardware WED/WO offloading enabled via `kmod-mt7915e`, `kmod-mt7986-firmware`, and `mt7986-wo-firmware`.
+1. **Qualcomm IPQ9554 2.4GHz WCSS PIL Memory Region Fix:**
+   - **Upstream Regression Resolution:** Upstream commit `07d8afca2af3` (`target/linux/qualcommbe: disable the IPQ9574 WCSS reservation by default`) disabled the reserved memory node `wcss@4ab00000` by default. This broke 2.4GHz Wi-Fi across community snapshots with remoteproc error `-22` (`unable to acquire memory-region`).
+   - **Permanent DTS Fix:** Added explicit `&q6_region { status = "okay"; };` in `ipq9554-jiorouter-ax6000-jidu6j11.dtsi` so the Q6V5 WCSS remoteproc driver cleanly binds to the Hexagon DSP and initializes `wifi0` without failure.
 
-2. **Enterprise Media, DLNA & Local Storage Sharing:**
-   - Full Samba 4 file server (`samba4-server`, `samba4-libs`, `luci-app-samba4`).
-   - MiniDLNA streaming server (`minidlna`, `luci-app-minidlna`) with full multimedia support (`BUILD_PATENTED=y`, `ffmpeg`, and `libdrm`).
-   - Native filesystem support built directly into SquashFS rootfs (`kmod-fs-ntfs3`, `kmod-fs-ext4`, `kmod-fs-vfat`, `kmod-fs-exfat`, `block-mount`, `kmod-usb-storage`, `kmod-usb-storage-uas`).
+2. **Upstream ath11k Wi-Fi Performance & Stability Overhaul:**
+   - **Full Transmit Power & 160MHz Band 2 Unlock (`959`):** Merges regulatory domain tables to unlock full 30 dBm (1000 mW) FCC transmit power and 160 MHz channel width on 5GHz Band 2 (channels 36–64).
+   - **OOM Elimination on High Throughput (`999`):** Shrinks RXDMA ring buffers (4096 → 2048) and monitor ring sizes (4096 → 256), freeing critical kernel memory and completely eliminating Out-Of-Memory kernel panics under sustained multi-gigabit traffic.
+   - **Private Page-Frag Caches for RXDMA (`955`):** Adopts dedicated page fragmentation caches for DMA receive buffers, fixing long-term page leaks and replacing legacy kmalloc workarounds.
+   - **Idempotent External IRQ Control (`954`):** Ensures external IRQ control handlers are idempotent, preventing race conditions or kernel panics during Wi-Fi restarts or driver reload.
 
-3. **Mesh VPN, Privacy & Network Optimization:**
-   - **Tailscale Mesh VPN:** Native `tailscale` (1.104.1), `tailscaled`, and `luci-app-tailscale-community`.
-   - **WireGuard:** Kernel-accelerated `kmod-wireguard`, `wireguard-tools`, `luci-proto-wireguard`, and `luci-app-wireguard`.
-   - **Network-wide Ad-Blocking:** `adguardhome` (0.107.79) and `luci-app-adguardhome`.
-   - **Active Queue Management (Bufferbloat Elimination):** `luci-app-sqm`, `sqm-scripts`, and `kmod-sched-cake`.
+3. **Zero-UART SSH Flasher Partition Resize (`vol_size=70MiB`):**
+   - Expanded UBI factory kernel partition sizing from 30 MiB to 70 MiB in `ubinize.cfg`. This easily accommodates modern 63–65 MB kernel FIT images (`initramfs-uImage.itb`) with the full media and networking suite, ensuring flawless zero-UART flashing via SSH directly into the idle NAND bank.
 
-4. **Remote Terminal & System Monitoring:**
-   - Web browser terminal (`ttyd`, `luci-app-ttyd`).
-   - Modern system monitors: `btop` (1.4.7), `htop`, `iperf3`, `ethtool`, `tcpdump`, `curl`, `nano`, `nlbwmon`, `luci-app-nlbwmon`, `watchcat`, and `luci-app-watchcat`.
-   - System upgrade management: `luci-app-attendedsysupgrade` and `attendedsysupgrade-common`.
-
-5. **USB Cellular / Mobile Hotspot & Printer Suite:**
-   - Complete USB tethering suite (`kmod-usb-net-rndis`, `kmod-usb-net-cdc-ether`, `kmod-usb-net-cdc-ncm`, `kmod-usb-net-cdc-mbim`, `kmod-usb-net-qmi-wwan`, `kmod-usb-net-huawei-cdc-ncm`, `kmod-usb-net-ipheth`, `kmod-usb-net-asix`, `kmod-usb-net-rtl8152`, `kmod-usb-serial-option`, `kmod-usb-serial-ftdi`, `usb-modeswitch`, `uqmi`, `umbim`).
-   - Network printer sharing: `p910nd`, `luci-app-p910nd`, and `kmod-usb-printer`.
+4. **Complete Out-of-the-Box Software Suite (`=y`):**
+   - **Networking & VPN:** Tailscale (1.104.1), WireGuard, AdGuardHome (0.107.79), SQM (CAKE).
+   - **Storage & Media:** Samba 4 server, MiniDLNA streaming (ffmpeg + libdrm), NTFS3, EXT4, VFAT, exFAT.
+   - **Cellular & Diagnostics:** Full USB 4G/5G tethering & modem suite (RNDIS, QMI, MBIM, iPhone Hotspot), ttyd web terminal, btop (1.4.7), htop, iperf3, and dynamic LED internet monitor.
 
 ---
 
