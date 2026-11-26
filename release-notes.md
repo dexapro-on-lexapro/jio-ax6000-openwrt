@@ -1,65 +1,54 @@
-## JioRouter AX6000 OpenWrt Production Release v2026.11.24
+## JioRouter AX6000 OpenWrt Production Release v2026.11.26
 
-Production-grade OpenWrt firmware builds for the JioRouter AX6000 family based on upstream OpenWrt master with Linux kernel 6.18 (supporting Qualcomm IPQ9554 JIDU6J11 series and MediaTek Filogic 830).
-
----
-
-### 🌟 Release Highlights
-
-1. **Qualcomm IPQ9554 2.4GHz WCSS PIL Memory Region Fix:**
-   - **Upstream Regression Resolution:** Upstream commit `07d8afca2af3` (`target/linux/qualcommbe: disable the IPQ9574 WCSS reservation by default`) disabled the reserved memory node `wcss@4ab00000` by default. This broke 2.4GHz Wi-Fi across community snapshots with remoteproc error `-22` (`unable to acquire memory-region`).
-   - **Permanent DTS Fix:** Added explicit `&q6_region { status = "okay"; };` in `ipq9554-jiorouter-ax6000-jidu6j11.dtsi` so the Q6V5 WCSS remoteproc driver cleanly binds to the Hexagon DSP and initializes `wifi0` without failure.
-
-2. **Upstream ath11k Wi-Fi Performance & Stability Overhaul:**
-   - **Full Transmit Power & 160MHz Band 2 Unlock (`959`):** Merges regulatory domain tables to unlock full 30 dBm (1000 mW) FCC transmit power and 160 MHz channel width on 5GHz Band 2 (channels 36–64).
-   - **OOM Elimination on High Throughput (`999`):** Shrinks RXDMA ring buffers (4096 → 2048) and monitor ring sizes (4096 → 256), freeing critical kernel memory and completely eliminating Out-Of-Memory kernel panics under sustained multi-gigabit traffic.
-   - **Private Page-Frag Caches for RXDMA (`955`):** Adopts dedicated page fragmentation caches for DMA receive buffers, fixing long-term page leaks and replacing legacy kmalloc workarounds.
-   - **Idempotent External IRQ Control (`954`):** Ensures external IRQ control handlers are idempotent, preventing race conditions or kernel panics during Wi-Fi restarts or driver reload.
-
-3. **Zero-UART SSH Flasher Partition Resize (`vol_size=70MiB`):**
-   - Expanded UBI factory kernel partition sizing from 30 MiB to 70 MiB in `ubinize.cfg`. This easily accommodates modern 63–65 MB kernel FIT images (`initramfs-uImage.itb`) with the full media and networking suite, ensuring flawless zero-UART flashing via SSH directly into the idle NAND bank.
-
-4. **Complete Out-of-the-Box Software Suite (`=y`):**
-   - **Networking & VPN:** Tailscale (1.104.1), WireGuard, AdGuardHome (0.107.79), SQM (CAKE).
-   - **Storage & Media:** Samba 4 server, MiniDLNA streaming (ffmpeg + libdrm), NTFS3, EXT4, VFAT, exFAT.
-   - **Cellular & Diagnostics:** Full USB 4G/5G tethering & modem suite (RNDIS, QMI, MBIM, iPhone Hotspot), ttyd web terminal, btop (1.4.7), htop, iperf3, and dynamic LED internet monitor.
+Production-grade OpenWrt firmware builds for the JioRouter AX6000 family based on upstream OpenWrt master with Linux kernel 6.18 (supporting Qualcomm IPQ9554 unified JIDU6J11 series and MediaTek Filogic 830).
 
 ---
 
-### 📦 Comprehensive List of Included Packages
+### Release Highlights
 
-All packages are compiled directly into the rootfs image (`=y`):
+1. **Single Unified Qualcomm JIDU6J11 Series Image (Covers All 6 Models):**
+   - Eliminated the redundant per-SKU `-6111` / `-6411` / `-6611` / `-6811` / `-6911` build split and suffix from target/image/board naming.
+   - A single unified image set (`jiorouter_ax6000-jidu6j11`) now serves all **6 Qualcomm J11 SKUs**: **JIDU6111, JIDU6411, JIDU6611, JIDU6711, JIDU6811, and JIDU6911**.
 
-* **Administration & Web UI:** `luci`, `luci-ssl`, `luci-app-attendedsysupgrade`, `attendedsysupgrade-common`, `luci-theme-bootstrap`, `rpcd`, `rpcd-mod-luci`, `uhttpd`
-* **Ad-blocking & DNS:** `adguardhome`, `luci-app-adguardhome`, `dnsmasq`
-* **Mesh & VPN:** `tailscale`, `tailscaled`, `luci-app-tailscale-community`, `wireguard-tools`, `kmod-wireguard`, `luci-proto-wireguard`, `luci-app-wireguard`
-* **File Sharing & Media Server:** `samba4-server`, `samba4-libs`, `luci-app-samba4`, `minidlna`, `luci-app-minidlna`, `ffmpeg`, `libdrm`, `lame`
-* **Filesystems & Storage:** `kmod-fs-ntfs3`, `kmod-fs-ext4`, `kmod-fs-vfat`, `kmod-fs-exfat`, `block-mount`, `kmod-usb-core`, `kmod-usb2`, `kmod-usb3`, `kmod-usb-storage`, `kmod-usb-storage-uas`, `fitblk`, `fstools`
-* **QoS & Traffic Shaping:** `luci-app-sqm`, `sqm-scripts`, `kmod-sched-cake`
-* **Terminal & Monitoring:** `ttyd`, `luci-app-ttyd`, `btop`, `htop`, `nlbwmon`, `luci-app-nlbwmon`, `iperf3`, `tcpdump`, `ethtool`, `nano`, `curl`, `watchcat`, `luci-app-watchcat`
-* **Printing:** `p910nd`, `luci-app-p910nd`, `kmod-usb-printer`
-* **Cellular & USB Modem:** `kmod-usb-net`, `kmod-usb-net-rndis`, `kmod-usb-net-cdc-ether`, `kmod-usb-net-cdc-ncm`, `kmod-usb-net-cdc-mbim`, `kmod-usb-net-qmi-wwan`, `kmod-usb-net-huawei-cdc-ncm`, `kmod-usb-net-ipheth`, `kmod-usb-net-asix`, `kmod-usb-net-asix-ax88179`, `kmod-usb-net-rtl8150`, `kmod-usb-net-rtl8152`, `kmod-usb-serial`, `kmod-usb-serial-option`, `kmod-usb-serial-wwan`, `kmod-usb-serial-ftdi`, `usb-modeswitch`, `uqmi`, `umbim`
-* **Core Base & Networking:** `apk-mbedtls`, `base-files`, `ca-bundle`, `dropbear`, `firewall4`, `nftables`, `kmod-nft-offload`, `libc`, `libgcc`, `libustream-mbedtls`, `logd`, `mtd`, `netifd`, `odhcp6c`, `odhcpd-ipv6only`, `ppp`, `ppp-mod-pppoe`, `procd-ujail`, `uboot-envtools`, `uci`, `uclient-fetch`, `urandom-seed`, `urngd`
-* **Wi-Fi Subsystem:** `wpad-basic-mbedtls`, `mac80211`, `kmod-mt7915e`, `kmod-mt7986-firmware`, `mt7986-wo-firmware`, `kmod-crypto-hw-safexcel` (MediaTek), `kmod-ath11k`, `kmod-ath11k-ahb`, `kmod-ath11k-pci`, `ath11k-firmware-ipq9574`, `ath11k-firmware-qcn9074`, `ipq-wifi-jiorouter_ax6000-jidu6j11`, `kmod-qcom-ppe` (Qualcomm)
+2. **Cross-Maintainer Sysupgrade Compatibility & Signature Fixes:**
+   - **Multi-Alias `SUPPORTED_DEVICES` & DTS `compatible`:** Both `jiorouter_ax6000-jidu6j11` (all 13 strings across unified `jidu6j11`, upstream PR #26498/#26551 `jidu6{111,411,611,711,811,911}`, and legacy `jidu6j11-{6111..6911}`) and `jiorouter_ax6000-jidu6j01` (all 6 strings across `jidu6j01` and `jidu6{201,401,601,701,801}`) match across community and prior builds.
+   - **Per-Alias Sysupgrade `CONTROL` Entries:** `scripts/sysupgrade-tar.sh` embeds non-directory `sysupgrade-<alias>/CONTROL` entries alongside the single `sysupgrade-<board>/` directory so `nand_do_platform_check()` on other maintainers' running builds validates cleanly without requiring `--force`.
+   - **Unsigned `fwtool` Images (`# CONFIG_SIGN_FIRMWARE is not set`):** Explicitly disabled local build-key signing (`ucert`) to prevent signature mismatches when upgrading from other maintainers' builds.
+   - **Fixed Qualcomm Base-Files Scripts:** Updated `platform.sh`, `02_network`, `11-ath11k-caldata`, and `uboot-envtools` (`qualcommbe_ipq95xx`) to match the unified `jiorouter,ax6000-jidu6j11` board string and all SKU aliases.
+
+3. **Included Platform Fixes & Full Software Suite (`=y`):**
+   - Qualcomm IPQ9554 2.4GHz WCSS PIL fix (`&q6_region { status = "okay"; };`), ath11k 30 dBm / 160 MHz Band 2 unlock, RXDMA/monitor ring reduction, and 70 MiB SSH flasher UBI sizing.
+   - LuCI (`luci`, `luci-ssl`, `luci-app-attendedsysupgrade`), Tailscale, WireGuard, AdGuardHome, SQM (CAKE), Samba 4, MiniDLNA, full USB tethering/modem + USB storage suite, `ttyd`, `btop`, `htop`, `iperf3`, `tcpdump`, and dynamic LED internet monitor.
 
 ---
 
-### 📦 Supported Device SKUs & Artifacts
+### Supported Device SKUs & Artifacts
 
-#### 1. Qualcomm IPQ9554 (qualcommbe)
-* **JIDU6111**
-* **JIDU6411**
-* **JIDU6611**
-* **JIDU6811**
-* **JIDU6911**
-*(Each SKU provides: `sysupgrade.bin`, `factory.ubi`, `initramfs-factory.ubi`, and `initramfs-uImage.itb`)*
+#### 1. Qualcomm IPQ9554 (Unified JIDU6J11 Series — JIDU6111, JIDU6411, JIDU6611, JIDU6711, JIDU6811, JIDU6911)
+* `openwrt-qualcommbe-ipq95xx-jiorouter_ax6000-jidu6j11-squashfs-sysupgrade.bin`
+* `openwrt-qualcommbe-ipq95xx-jiorouter_ax6000-jidu6j11-squashfs-factory.ubi`
+* `openwrt-qualcommbe-ipq95xx-jiorouter_ax6000-jidu6j11-initramfs-factory.ubi`
+* `openwrt-qualcommbe-ipq95xx-jiorouter_ax6000-jidu6j11-initramfs-uImage.itb`
 
 #### 2. MediaTek Filogic 830 MT7986A (mediatek/filogic)
-* **JIDU6101:** `sysupgrade.bin` & `initramfs-kernel.bin`
-* **JIDU6J01 (JIDU6801):** `sysupgrade.bin` & `initramfs-kernel.bin`
+* **JIDU6101:**
+  * `openwrt-mediatek-filogic-jiorouter_ax6000-jidu6101-squashfs-sysupgrade.bin`
+  * `openwrt-mediatek-filogic-jiorouter_ax6000-jidu6101-initramfs-kernel.bin`
+* **JIDU6J01 *(JIDU6201, JIDU6401, JIDU6601, JIDU6701, JIDU6801)*:**
+  * `openwrt-mediatek-filogic-jiorouter_ax6000-jidu6j01-squashfs-sysupgrade.bin`
+  * `openwrt-mediatek-filogic-jiorouter_ax6000-jidu6j01-initramfs-kernel.bin`
 
 ---
 
-### 🛡️ Verified SHA256 Checksums
+### Verified SHA-256 Checksums
 
-See `SHA256SUMS` attached to the release assets for cryptographic verification.
+```text
+127dfb1df8f72d8e0275f38a7f937d6001c26b4db754da0d55f91b55b1a5e140  openwrt-mediatek-filogic-jiorouter_ax6000-jidu6101-initramfs-kernel.bin
+d28e03b617530b4f6f919abbbca95a0d255692425f1754c722b27c9a39a98947  openwrt-mediatek-filogic-jiorouter_ax6000-jidu6101-squashfs-sysupgrade.bin
+beca048d5cc20bba3001c67b135faaf9d89c49745046c3293bdd5e1e80c30247  openwrt-mediatek-filogic-jiorouter_ax6000-jidu6j01-initramfs-kernel.bin
+9317716e6b4522d417d01802c0ccf67f0049d239d71873b6c2cc79736540579f  openwrt-mediatek-filogic-jiorouter_ax6000-jidu6j01-squashfs-sysupgrade.bin
+b1ac3e4db1c92d566d83dfb0c2858a2f13363f5c271c4d87d8c2ad40a0ccdf3a  openwrt-qualcommbe-ipq95xx-jiorouter_ax6000-jidu6j11-initramfs-factory.ubi
+09429bcbfe945b4778ad0332d2a6d331ae8f53e1c88fc13ae600e891ea84d514  openwrt-qualcommbe-ipq95xx-jiorouter_ax6000-jidu6j11-initramfs-uImage.itb
+81c9c9977adc1632cf7ab1abd1d8a02de1659aec6fc2b80e677f9302f3f35442  openwrt-qualcommbe-ipq95xx-jiorouter_ax6000-jidu6j11-squashfs-factory.ubi
+544813faafcc0d6add00bef1483e6606a6ec5c7b04add2b79796b34ebd4ea71a  openwrt-qualcommbe-ipq95xx-jiorouter_ax6000-jidu6j11-squashfs-sysupgrade.bin
+```

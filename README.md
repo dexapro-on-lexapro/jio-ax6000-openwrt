@@ -51,17 +51,14 @@ On OpenWrt snapshot builds, upstream live package feeds frequently change, causi
 ## Supported SKUs & Build Artifacts
 
 Pre-compiled production images and cryptographic checksums are available on GitHub Releases:
-* **[v2026.11.24 Release (Latest)](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.11.24)** - Qualcomm IPQ9554 2.4GHz WCSS PIL memory fix, ath11k 160MHz Band 2 & 30 dBm unlock, OOM buffer reduction, and 70MB UBI partition sizing.
+* **[v2026.11.26 Release (Latest)](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.11.26)** - Unified single Qualcomm `jidu6j11` image across all 6 J11 SKUs (6111/6411/6611/6711/6811/6911), cross-maintainer `SUPPORTED_DEVICES` & sysupgrade `CONTROL` aliases for seamless upgrades from any community/earlier build, unsigned `fwtool` metadata (`# CONFIG_SIGN_FIRMWARE is not set`), and fixed Qualcomm base-files scripts (`02_network`, `11-ath11k-caldata`, `platform.sh`, `uboot-envtools`).
+* **[v2026.11.24 Release](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.11.24)** - Qualcomm IPQ9554 2.4GHz WCSS PIL memory fix, ath11k 160MHz Band 2 & 30 dBm unlock, OOM buffer reduction, and 70MB UBI partition sizing.
 * **[v2026.11.06 Release](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.11.06)** - Full suite with Samba 4, MiniDLNA, Tailscale, AdGuardHome, SQM (CAKE), WireGuard, USB cellular tethering, and USB printing.
 * **[v2026.10.30 Release](https://github.com/dexapro-on-lexapro/jio-ax6000-openwrt/releases/tag/v2026.10.30)** - Baseline production release.
 
 | Device SKU | Architecture | SoC / Platform | Radios | OpenWrt Target | Generated Artifacts |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **JIDU6111** | ARM64 | Qualcomm IPQ9554 | 2.4G ax + 5G ax (4x4) | `qualcommbe/ipq95xx` | `sysupgrade.bin`, `factory.ubi`, `initramfs-uImage.itb`, `initramfs-factory.ubi` |
-| **JIDU6411** | ARM64 | Qualcomm IPQ9554 | 2.4G ax + 5G ax (4x4) | `qualcommbe/ipq95xx` | `sysupgrade.bin`, `factory.ubi`, `initramfs-uImage.itb`, `initramfs-factory.ubi` |
-| **JIDU6611** | ARM64 | Qualcomm IPQ9554 | 2.4G ax + 5G ax (4x4) | `qualcommbe/ipq95xx` | `sysupgrade.bin`, `factory.ubi`, `initramfs-uImage.itb`, `initramfs-factory.ubi` |
-| **JIDU6811** | ARM64 | Qualcomm IPQ9554 | 2.4G ax + 5G ax (4x4) | `qualcommbe/ipq95xx` | `sysupgrade.bin`, `factory.ubi`, `initramfs-uImage.itb`, `initramfs-factory.ubi` |
-| **JIDU6911** | ARM64 | Qualcomm IPQ9554 | 2.4G ax + 5G ax (4x4) | `qualcommbe/ipq95xx` | `sysupgrade.bin`, `factory.ubi`, `initramfs-uImage.itb`, `initramfs-factory.ubi` |
+| **JIDU6J11 Series** *(6111, 6411, 6611, 6711, 6811, 6911)* | ARM64 | Qualcomm IPQ9554 | 2.4G ax + 5G ax (4x4) | `qualcommbe/ipq95xx` | `sysupgrade.bin`, `factory.ubi`, `initramfs-uImage.itb`, `initramfs-factory.ubi` |
 | **JIDU6101** | ARM64 | MediaTek MT7986A Filogic 830 | 2.4G ax + 5G ax (4x4) | `mediatek/filogic` | `squashfs-sysupgrade.bin`, `initramfs-kernel.bin` |
 | **JIDU6J01** *(6201, 6401, 6601, 6701, 6801)* | ARM64 | MediaTek MT7986A Filogic 830 | 2.4G ax + 5G ax (4x4) | `mediatek/filogic` | `squashfs-sysupgrade.bin`, `initramfs-kernel.bin` |
 
@@ -112,7 +109,7 @@ To build this firmware from source using the official OpenWrt build system:
    ```
 
 5. **Configure the Target Profile:**
-   * For **Qualcomm IPQ9554**: Target System: `Qualcomm Technologies, Inc. IPQ95xx (Enterprise/Carrier)`, Subtarget: `IPQ9554 / IPQ9574`, Device: Select your `JioRouter AX6000 JIDU6*11` model.
+   * For **Qualcomm IPQ9554**: Target System: `Qualcomm Technologies, Inc. IPQ95xx (Enterprise/Carrier)`, Subtarget: `IPQ9554 / IPQ9574`, Device: Select `JioRouter AX6000 (JIDU6J11 Series)` (single unified image for 6111, 6411, 6611, 6711, 6811, and 6911).
    * For **MediaTek Filogic 830**: Target System: `MediaTek Ralink ARM`, Subtarget: `Filogic 8x0 (MT798x)`, Device: Select `JioRouter AX6000 (JIDU6101)` or `JioRouter AX6000 (JIDU6J01)`.
 
 6. **Compile:**
